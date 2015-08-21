@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+    <resources>
+        <string name="hello">CloudBench v1.0</string>
+        <string name="app_name">CloudBench v1.0</string>
+        <string name="benchmarks">Select benchmark</string>
+        <string name="runallbencmarks">Run All Benchmarks</string>
+        <string name="run_local_label">Run Local</string>
+        <string name="run_cloud_label">Run Cloud</string>  
+        <string name="button1_label">Start</string>
+        <string name="button2_label">Test</string>
+        <string name="button3_label">Phone Info</string>
+        <string name="button4_label">Exit</string>  
+		<string name="idle">Idle</string>      
+     	<string name="start">Starting Tests</string>
+   		<string name="test1">Test1 - Bandwidth</string>
+     	<string name="test2">Test2 - PrimeCalc</string>
+     	<string name="test3">Test3 - ListSort</string>
+   		<string name="test4">Test4 - ImageTransform</string>
+   		<string name="send">Sending results</string>	 
+ 		<string name="creator">By Oskar H.</string>	
+		<string name="loading1">Loading1 - Hardware Data</string>
+     	<string name="loading2">Loading2 - Text List - This one takes time</string>
+     	<string name="loading3">Loading3 - Image</string>
+   		<string name="loading4">Getting there</string>
+   		
+   		
+   	<string-array name="benchmark_arrays">
+        <item>DataSaver</item>
+        <item>List Sort</item>
+        <item>Prime Calc</item>
+        <item>Upload/Download</item>
+    </string-array>
+    
+    </resources>
