@@ -29,6 +29,7 @@
         <item>List Sort</item>
         <item>Prime Calc</item>
         <item>Upload/Download</item>
+        <item>Linpack benchmark</item>
     </string-array>
     
     </resources>

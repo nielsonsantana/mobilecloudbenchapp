@@ -13,11 +13,14 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Currency;
+import java.util.Date;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 import com.primecalc.PrimeCalcLocal;
 import com.starter.Starter;
+import com.linpack.LinpackLocal;
 import com.listsorter.ListSorterCloud;
 import com.listsorter.ListSorterLocal;
 import com.timer.Timer;
@@ -27,12 +30,19 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnCompletionListener;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
@@ -84,6 +94,9 @@ public class CloudBench extends Activity implements OnClickListener, Runnable {
     
     final com.ntp.SntpClient sntpclient = new com.ntp.SntpClient(); ;
     
+    private int experiment = 0;
+    private boolean runLocal = false;
+    private boolean runCloud = false;
     /*
     private String listSorterTest = "hang ten";
     private String primeCalcTest = "nada surf";
@@ -94,6 +107,13 @@ public class CloudBench extends Activity implements OnClickListener, Runnable {
     public void onCreate(Bundle savedInstanceState) {  	        
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+        
+      Intent cbservice = new Intent(this, ServiceCloudBench.class);
+//      Bundle extras = cbservice.getExtras();
+//      extras.putString("BENCHMARK", "linpack");
+//      extras.putString("ENVIROMENT", "local");
+//      startService(cbservice);
+
         
         firstButton = findViewById(R.id.button1);
         firstButton.setOnClickListener(this);
@@ -121,53 +141,53 @@ public class CloudBench extends Activity implements OnClickListener, Runnable {
         
         Toast.makeText(getApplicationContext(), String.valueOf(getBatteryLevel()), Toast.LENGTH_LONG).show();
         
-        syncSntp();
-        
-        new Thread(new Runnable() {
-            public void run() {
-            	handler.sendEmptyMessage(1);
-                gatherInfo();
-        		handler.sendEmptyMessage(2);
-                loadTextFile();
-        		handler.sendEmptyMessage(3);
-                loadImageFile();
-        		handler.sendEmptyMessage(4);
-            }
-            
-            private Handler handler = new Handler() {
+//        new Thread(new Runnable() {
+//            public void run() {
+//            	handler.sendEmptyMessage(1);
+//                .gatherInfo();
+//        		handler.sendEmptyMessage(2);
+//                loadTextFile();
+//        		handler.sendEmptyMessage(3);
+//                loadImageFile();
+//        		handler.sendEmptyMessage(4);
+//            }
+//            
+//            private Handler handler = new Handler() {
+//
+//                @Override
+//                public void handleMessage(Message msg) {
+//                    switch (msg.what) {
+//        	            case 1:
+//        	            	status.setText(R.string.loading1);  
+//        	            	progressBar.setProgress(25);
+//        	                break;
+//                    
+//        	            case 2:
+//        	                status.setText(R.string.loading2);  
+//        	            	progressBar.setProgress(50);
+//        	                break;     
+//        	                
+//        	            case 3:
+//        	                status.setText(R.string.loading3);  
+//        	            	progressBar.setProgress(75);
+//        	                break; 	 
+//        	                
+//        	            case 4:
+//        	                status.setText(R.string.loading4);  
+//        	            	progressBar.setProgress(100);
+//                        	firstButton.setVisibility(View.VISIBLE);
+//                        	forthButton.setVisibility(View.VISIBLE);
+//                        	creator.setVisibility(View.VISIBLE);
+//                            progressBar.setVisibility(ProgressBar.INVISIBLE);
+//                            progressBar.setProgress(0);
+//                            status.setVisibility(View.INVISIBLE);
+//        	                break;     
+//                        }
+//                    }
+//            	};        	
+//          }).start();
+//        
 
-                @Override
-                public void handleMessage(Message msg) {
-                    switch (msg.what) {
-        	            case 1:
-        	            	status.setText(R.string.loading1);  
-        	            	progressBar.setProgress(25);
-        	                break;
-                    
-        	            case 2:
-        	                status.setText(R.string.loading2);  
-        	            	progressBar.setProgress(50);
-        	                break;     
-        	                
-        	            case 3:
-        	                status.setText(R.string.loading3);  
-        	            	progressBar.setProgress(75);
-        	                break; 	 
-        	                
-        	            case 4:
-        	                status.setText(R.string.loading4);  
-        	            	progressBar.setProgress(100);
-                        	firstButton.setVisibility(View.VISIBLE);
-                        	forthButton.setVisibility(View.VISIBLE);
-                        	creator.setVisibility(View.VISIBLE);
-                            progressBar.setVisibility(ProgressBar.INVISIBLE);
-                            progressBar.setProgress(0);
-                            status.setVisibility(View.INVISIBLE);
-        	                break;     
-                        }
-                    }
-            	};        	
-          }).start();
     }
     
     public boolean syncSntp(){
@@ -310,6 +330,9 @@ public class CloudBench extends Activity implements OnClickListener, Runnable {
 			Toast.makeText(getApplicationContext(), "Runnning local", Toast.LENGTH_SHORT).show();
 			
 			int position = spinner_benchmarks.getSelectedItemPosition();
+			experiment = position;
+			runLocal = true;
+			runCloud = false;
 			runExperiment(position, true, false);
 		}
 	};
@@ -320,12 +343,26 @@ public class CloudBench extends Activity implements OnClickListener, Runnable {
 		public void onClick(View v) {
 			
 			int position = spinner_benchmarks.getSelectedItemPosition();
+			experiment = position;
+			runLocal = false;
+			runCloud = true;
 			runExperiment(position, false, true);
 			
 		}
 	};
 	
-	public void runExperiment(int experiment, final boolean runLocal, final boolean runCloud){
+	public final void finishActivity(){
+		android.os.Process.killProcess(android.os.Process.myPid());
+	}
+	
+	
+	public void runExperiment(int experiment, boolean runLocal, boolean runCloud){
+		ArrayList<Integer> inputList = new ArrayList<Integer>();
+		int execucoes = 0;
+		String benchmarkName = "";
+		int initialInput = 1000;
+		int fatorIncrease = 1000;
+		Log.i("cloudbench1", "runLocal:"+ Boolean.toString(runLocal) +" runCloud:" + Boolean.toString(runCloud));
 		
 		switch (experiment) {
 		case 0:
@@ -333,76 +370,22 @@ public class CloudBench extends Activity implements OnClickListener, Runnable {
 			
 		case 2:
 			
-			Toast.makeText(getApplicationContext(), "Starting experiment ", Toast.LENGTH_LONG).show();
-		    
-			new Thread(new Runnable() {
-	            public void run() {
-					new Timer();
-					Timer.reset();
-					Timer.start();
-					ArrayList<Integer> timeExperiments = new ArrayList<Integer>(3);
-					ArrayList<String> array_result = new ArrayList<String>(10);
-					timeExperiments.add(3);
-					timeExperiments.add(5);
-					timeExperiments.add(10);
-					String tmpfileNameLog = fileNameLog + ".txt";
-					
-				    if(runLocal)
-				    	tmpfileNameLog = fileNameLog + "_local.txt";
-				    if(runCloud)
-				    	tmpfileNameLog = fileNameLog + "_cloud.txt";
-				    
-				    createFileResults(tmpfileNameLog, "Local | Cloud");
-				    array_result.add("\nIndex, Comp-local | Request, Server, Response, Total" );
-				    for (int k = 0; k < timeExperiments.size(); k++) {
-						int interacaos = timeExperiments.get(k);
-						int time = timeExperiments.get(k);
-						
-						Toast.makeText(getApplicationContext(), "Starting experiment time: " + String.valueOf(time), Toast.LENGTH_SHORT).show();
-
-						Toast.makeText(getApplicationContext(), "Starting experiment ", Toast.LENGTH_LONG).show();
-						    
-						ArrayList<Integer> arrlist = new ArrayList<Integer>(7);
-					    arrlist.add(100);
-					    arrlist.add(1000);
-					    arrlist.add(10000);
-					    arrlist.add(100000);
-					    arrlist.add(1000000);
-					    
-					    array_result.add("\n\nExperimento: " + String.valueOf(timeExperiments.get(k)));
-						
-//						Log.d("log_cloud", String.valueOf(arrlist.size()));
-						for (int i = 0; i < arrlist.size(); i++) {
-							array_result.add("\nCaso " + String.valueOf(i));
-							
-						    Starter start = new Starter();
-						    start.setSntpClient(sntpclient);
-						    start.dataSaverInit();
-						    
-//							array_result.add("\n" + String.valueOf(time) + ", " + String.valueOf(Timer.result()/100.0));
-							
-						    for (int j = 0; j < interacaos; j++) {
-						    	start.primeCalc2(arrlist.get(i), runLocal, runCloud);
-						    	array_result.add("\n" + String.valueOf(j).toString() + ",	" + start.data.getPrimeCalcLocalResult() + 
-						    					 ",	" + start.data.getLogPrimeCalcCloudResult());
-						    	
-						    	if(array_result.size() == 5){
-						    		UtilsFunctions.writeResults(tmpfileNameLog, array_result);
-						    		array_result.clear();
-						    	}
-						    }
-						    Toast.makeText(getApplicationContext(), "Finished " + String.valueOf(i), Toast.LENGTH_SHORT).show();
-						    UtilsFunctions.writeResults(tmpfileNameLog, array_result);
-						    array_result.clear();
-						}
-						Toast.makeText(getApplicationContext(), "Finishing:" + String.valueOf(time) + ", " + String.valueOf(Timer.result()/100.0), Toast.LENGTH_LONG).show();
-					}
-				    
-				    Toast.makeText(getApplicationContext(), "EXPERIMENT FINISHED", Toast.LENGTH_LONG).show();
-				    
-//				    threadMetricCollector.interrupt();
-	            }
-			}).start();
+			int intervalo = 50;
+			int step = 10000;
+			inputList.add(1000);
+			for (int i = 1; i < intervalo; i++) {
+				inputList.add(i*step);
+			}
+			execucoes = 100;
+			benchmarkName = "prime";
+			
+			break;
+		case 4:
+			inputList.add(1000);
+			inputList.add(10000);
+			inputList.add(100000);
+			execucoes = 10;
+			benchmarkName = "linpack";
 			
 			break;
 
@@ -410,6 +393,76 @@ public class CloudBench extends Activity implements OnClickListener, Runnable {
 			break;
 		}
 		
+		runBenchmark(execucoes, benchmarkName, inputList, runLocal, runCloud);
+		
+	}
+	
+	public void runBenchmark(final int execucoes, final String benchmarkName, final ArrayList<Integer> inputList,
+			final boolean runLocal, final boolean runCloud){
+		Toast.makeText(getApplicationContext(), "Starting experiment ", Toast.LENGTH_LONG).show();
+		
+		long seed = System.nanoTime();
+//		Collections.shuffle(inputList, new Random(seed));
+		new Thread(new Runnable() {
+            public void run() {
+            	SystemClock.sleep(30000);
+				new Timer();
+				Timer.reset();
+				Timer.start();
+				ArrayList<Integer> experiments = new ArrayList<Integer>(3);
+				ArrayList<String> array_result = new ArrayList<String>(10);
+				experiments.add(execucoes);
+				
+				String datetime = UtilsFunctions.getCurrentTime();
+				
+				String sufix = "_"+datetime + "_.txt";
+				String tmpfileNameLog = fileNameLog + sufix;
+				
+			    if(runLocal)
+			    	tmpfileNameLog = fileNameLog + "_" + benchmarkName +"_local" + sufix;
+			    if(runCloud)
+			    	tmpfileNameLog = fileNameLog + "_" + benchmarkName +"_cloud" + sufix;
+			    
+			    createFileResults(tmpfileNameLog, "Local | Cloud");
+			    array_result.add("\nIndex, 	DateTime,	Comp-local,	Request,	Server,	Response,	Total" );
+			    for (int k = 0; k < experiments.size(); k++) {
+					int interacaos = experiments.get(k);
+					int time = experiments.get(k);
+				    
+				    array_result.add("\n\nExperimento: " + String.valueOf(experiments.get(k)));
+					
+				    for (int j = 0; j < interacaos; j++) {
+						array_result.add("\nCaso " + String.valueOf(j));
+						
+					    Starter start = new Starter();
+//					    start.setSntpClient(sntpclient);
+					    start.dataSaverInit();
+					    
+						for (int i = 0; i < inputList.size(); i++) {					    							
+					    	if (benchmarkName == "prime"){
+					    		start.primeCalc2(inputList.get(i), runLocal, runCloud);
+					    	}
+					    	else if(benchmarkName == "linpack"){
+					    		start.linpackCalc2(inputList.get(i), runLocal, runCloud);
+					    	}
+					    	array_result.add("\n" + String.valueOf(i).toString() + ", " + UtilsFunctions.getCurrentTime() + ",	" + start.data.getPrimeCalcLocalResult() + 
+					    					 ",	" + start.data.getLogPrimeCalcCloudResult());
+					    	
+					    	if(array_result.size() == 5){
+					    		UtilsFunctions.writeResults(tmpfileNameLog, array_result);
+					    		array_result.clear();
+					    	}
+					    }
+					    UtilsFunctions.writeResults(tmpfileNameLog, array_result);
+					    array_result.clear();
+					}
+				}
+			    SystemClock.sleep(30000);
+			    playSound2();
+			    SystemClock.sleep(1500);
+			    finishActivity();
+            }
+		}).start();
 	}
 	
 	public void createFileResults(String fileName, String header) {
@@ -421,6 +474,7 @@ public class CloudBench extends Activity implements OnClickListener, Runnable {
 			bufferWritter.close();
 		}
 		catch(Exception e) {
+			Log.e("CloudBench1FILE", fileName + e.getMessage());
 			Toast.makeText(getBaseContext(), e.getMessage(),
 					Toast.LENGTH_LONG).show();
 		}
@@ -429,30 +483,36 @@ public class CloudBench extends Activity implements OnClickListener, Runnable {
 	
     public void run() {
     	Starter start = new Starter();
-
-		handler.sendEmptyMessage(16);
-    	start.dataSaverInit();
-    	start.savePhoneInfo(this.phoneModel, this.fingerPrint, this.phoneSDK, this.connectionInfo);
-        
-		start.downloadUploadSpeed(this.filen, this.downloadTempFile);
-		handler.sendEmptyMessage(32);
-        
-		// this.primeCalcTest = start.primeCalc();
-		start.primeCalc();
-		handler.sendEmptyMessage(48);
     	
-		// this.listSorterTest = start.listSorter(this.wordList, this.textString);
-		start.listSorter(this.wordList, this.textString);
-		handler.sendEmptyMessage(66);
-
-		// this.imageTransformTest = start.imageTran(this.is, this.filen, this.tempSaveImage1, this.tempSaveImage2);
-		start.imageTran(this.is, this.filen, this.tempSaveImage1, this.tempSaveImage2);
-		handler.sendEmptyMessage(84);
-
-		start.dataSaverFinnish();
-		handler.sendEmptyMessage(100);
+		int experiment = spinner_benchmarks.getSelectedItemPosition();
+		
+    	runExperiment(experiment, runLocal, runCloud);
     	
-		handler.sendEmptyMessage(101);
+    	return;
+    	
+//		handler.sendEmptyMessage(16);
+//    	start.dataSaverInit();
+//    	start.savePhoneInfo(this.phoneModel, this.fingerPrint, this.phoneSDK, this.connectionInfo);
+//        
+//		start.downloadUploadSpeed(this.filen, this.downloadTempFile);
+//		handler.sendEmptyMessage(32);
+//        
+//		// this.primeCalcTest = start.primeCalc();
+//		start.primeCalc();
+//		handler.sendEmptyMessage(48);
+//    	
+//		// this.listSorterTest = start.listSorter(this.wordList, this.textString);
+//		start.listSorter(this.wordList, this.textString);
+//		handler.sendEmptyMessage(66);
+//
+//		// this.imageTransformTest = start.imageTran(this.is, this.filen, this.tempSaveImage1, this.tempSaveImage2);
+//		start.imageTran(this.is, this.filen, this.tempSaveImage1, this.tempSaveImage2);
+//		handler.sendEmptyMessage(84);
+//
+//		start.dataSaverFinnish();
+//		handler.sendEmptyMessage(100);
+//    	
+//		handler.sendEmptyMessage(101);
     }
     
     private Handler handler = new Handler() {
@@ -579,4 +639,54 @@ public class CloudBench extends Activity implements OnClickListener, Runnable {
             Log.i("Battery", e.getMessage());
         } 
     }
+    
+    public final void playSound(){
+    	Uri defaultRingtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
+    	MediaPlayer mediaPlayer = new MediaPlayer();
+
+    	try {
+    	      mediaPlayer.setDataSource(getApplicationContext(), defaultRingtoneUri);
+    	      mediaPlayer.setAudioStreamType(AudioManager.STREAM_NOTIFICATION);
+    	      mediaPlayer.prepare();
+    	      mediaPlayer.setOnCompletionListener(new OnCompletionListener() {
+
+    	         @Override
+    	         public void onCompletion(MediaPlayer mp)
+    	         {
+    	            mp.release();
+    	         }
+    	      });
+    	      
+    	  mediaPlayer.start();
+    	  
+    	} catch (IllegalArgumentException e) {
+    	 e.printStackTrace();
+    	} catch (SecurityException e) {
+    	 e.printStackTrace();
+    	} catch (IllegalStateException e) {
+    	 e.printStackTrace();
+    	} catch (IOException e) {
+    	 e.printStackTrace();
+    	}
+    }
+    
+    public final void playSound2(){
+    	Uri alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+
+    	if(alert == null){
+    	    // alert is null, using backup
+    	    alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
+    	    // I can't see this ever being null (as always have a default notification)
+    	    // but just incase
+    	    if(alert == null) {  
+    	        // alert backup is null, using 2nd backup
+    	        alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);                
+    	    }
+    	}
+    	Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), alert);
+    	r.play();
+    }
+	
 }

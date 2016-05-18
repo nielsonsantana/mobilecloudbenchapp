@@ -11,7 +11,7 @@
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
     <application
-        android:debuggable="false"
+        android:debuggable="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name" >
         <activity
@@ -26,6 +26,9 @@
             </intent-filter>
         </activity>
         <activity android:name=".Webscreen" android:label="Web"> </activity> 
+      	<service android:enabled="true" 
+          android:process=":cloud_bench_service" 
+          android:name=".ServiceCloudBench" />
     </application>
 
 </manifest>

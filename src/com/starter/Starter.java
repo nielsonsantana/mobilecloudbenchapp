@@ -10,6 +10,8 @@ import android.util.Log;
 import com.downloaduploadspeed.DownloadUploadSpeed;
 import com.image.ImageTransformCloud;
 import com.image.ImageTransformLocal;
+import com.linpack.LinpackCloud;
+import com.linpack.LinpackLocal;
 import com.listsorter.ListSorterLocal;
 import com.listsorter.ListSorterCloud;
 import com.ntp.SntpClient;
@@ -65,13 +67,12 @@ public class Starter {
 	}
 	
 	public void primeCalc2(int max_limit, boolean runLocal, boolean runCloud) {
-		String inUrl = "http://52.2.18.134:8080/ServletPrimeCalc/primecalc2?validate=1234";
+		String inUrl = "http://177.71.149.2:8080/ServletBenchmarks/primecalc2?validate=1234";
 		
 		if (max_limit > 0)
 			inUrl += "&max_limit=" + String.valueOf(max_limit);
 		inUrl += "&send_time=" + System.currentTimeMillis();
-		Log.i("cloudbench1_time", String.valueOf(sntpclient.getNtpTime()));
-		Log.i("cloudbench1", inUrl);
+//		Log.i("cloudbench1_time", String.valueOf(sntpclient.getNtpTime()));
 		
 		if(runLocal){
 			PrimeCalcLocal primeCalc = new PrimeCalcLocal();
@@ -81,8 +82,8 @@ public class Starter {
 		}
 		
 		if(runCloud){
+			Log.i("cloudbench1", inUrl);
 			PrimeCalcCloud pcloud = new PrimeCalcCloud();
-			pcloud.setSntpClient(sntpclient);
 			pcloud.primeInteract(inUrl);
 			this.data.setComputeTimeServerCloudResult(String.valueOf(pcloud.getComputeTimeServer()));
 			this.data.setRequestTimeCloudResult(String.valueOf(pcloud.getRequestTime()));
@@ -92,8 +93,36 @@ public class Starter {
 			String primeCalcCloudTest = pcloud.returnNumber();
 			this.data.setPrimeCalcCloudResult(Float.toString(pcloud.returnTime()));
 		}
-		//this.data.setTestData(primeCalcLocalTest + "==" + primeCalcCloudTest +"&");
-
+	}
+	
+	
+	public void linpackCalc2(int parameter, boolean runLocal, boolean runCloud) {
+		String inUrl = "http://177.71.149.2:8080/ServletBenchmarks/linpackcalc?validate=1234";
+		
+		if (parameter > 0)
+			inUrl += "&parameter=" + String.valueOf(parameter);
+		inUrl += "&send_time=" + System.currentTimeMillis();
+//		Log.i("cloudbench1_time", String.valueOf(sntpclient.getNtpTime()));
+		Log.i("cloudbench1", inUrl);
+		
+		if(runLocal){
+			LinpackLocal pCalc = new LinpackLocal();
+			pCalc.runLinpack(parameter);
+			String primeCalcLocalTest = pCalc.returnNumber();
+			this.data.setPrimeCalcLocalResult(Float.toString(pCalc.returnTime()));
+		}
+		
+		if(runCloud){
+			LinpackCloud pcloud = new LinpackCloud();
+			pcloud.runInteract(inUrl);
+			this.data.setComputeTimeServerCloudResult(String.valueOf(pcloud.getComputeTimeServer()));
+			this.data.setRequestTimeCloudResult(String.valueOf(pcloud.getRequestTime()));
+			this.data.setResponseTimeCloudResult(String.valueOf(pcloud.getResponseTime()));
+			Log.i("cloudbench1", this.data.getComputeTimeServerCloudResult());
+			this.data.setErrorMessage(pcloud.errorMessage());
+//			String primeCalcCloudTest = pcloud.returnNumber();
+			this.data.setPrimeCalcCloudResult(Float.toString(pcloud.returnTime()));
+		}
 	}
 	
 	public void listSorter(List<String> wordList, String textString) {
