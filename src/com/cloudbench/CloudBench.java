@@ -14,7 +14,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Currency;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Random;
 import java.util.UUID;
 
@@ -26,6 +28,7 @@ import com.listsorter.ListSorterLocal;
 import com.timer.Timer;
 import com.utils.UtilsFunctions;
 
+import android.R.integer;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -70,6 +73,7 @@ import android.content.res.Resources.Theme;
 public class CloudBench extends Activity implements OnClickListener, Runnable {
 	final List<String> wordList = new ArrayList<String>();
 	String textString = "";
+	String TAG = "CloudBench";
     private ProgressBar progressBar;
     private TextView status;
     private TextView creator;
@@ -97,6 +101,8 @@ public class CloudBench extends Activity implements OnClickListener, Runnable {
     private int experiment = 0;
     private boolean runLocal = false;
     private boolean runCloud = false;
+    
+    Object lock = new Object();
     /*
     private String listSorterTest = "hang ten";
     private String primeCalcTest = "nada surf";
@@ -109,9 +115,6 @@ public class CloudBench extends Activity implements OnClickListener, Runnable {
         setContentView(R.layout.main);
         
       Intent cbservice = new Intent(this, ServiceCloudBench.class);
-//      Bundle extras = cbservice.getExtras();
-//      extras.putString("BENCHMARK", "linpack");
-//      extras.putString("ENVIROMENT", "local");
 //      startService(cbservice);
 
         
@@ -358,33 +361,75 @@ public class CloudBench extends Activity implements OnClickListener, Runnable {
 	
 	public void runExperiment(int experiment, boolean runLocal, boolean runCloud){
 		ArrayList<Integer> inputList = new ArrayList<Integer>();
+		ArrayList<TaskItem> inputListTask = new ArrayList<TaskItem>();
+		
 		int execucoes = 0;
 		String benchmarkName = "";
 		int initialInput = 1000;
 		int fatorIncrease = 1000;
+		int sleep_time_replication = 0;
+		int constant_time = 0;
+		boolean estress_test = true;
 		Log.i("cloudbench1", "runLocal:"+ Boolean.toString(runLocal) +" runCloud:" + Boolean.toString(runCloud));
+		ArrayList<String> list = null;
+		String line = "";
 		
 		switch (experiment) {
 		case 0:
 			break;
+		
+		case 1:
+			list = UtilsFunctions.readFile("benchmark/image/input.txt");
+			for(int i = 0; i < list.size(); i++){
+				TaskItem ti = new TaskItem();
+				line = list.get(i);
+				ti.index = Integer.valueOf(line.split(";")[0]);
+				ti.workload = line.split(";")[1].trim();
+				inputListTask.add(ti);
+			}
+			execucoes = 10;
+			benchmarkName = "image";
+			sleep_time_replication = 1000;
+			break;
 			
 		case 2:
+			list = UtilsFunctions.readFile("benchmark/primos/input-primos.txt");
 			
-			int intervalo = 50;
-			int step = 10000;
-			inputList.add(1000);
-			for (int i = 1; i < intervalo; i++) {
-				inputList.add(i*step);
+			line = "";
+			int value = 0;
+			Log.d(TAG, "File lines "+ Integer.toString(list.size()) +"...");
+			for(int i = 1; i < list.size(); i++){
+				line = list.get(i);
+				TaskItem ti = new TaskItem();
+				line = list.get(i);
+				ti.index = Integer.valueOf(line.split(",")[0]);
+				ti.workload = line.split(",")[1].trim();
+				inputListTask.add(ti);
 			}
-			execucoes = 100;
+			sleep_time_replication = 30000;
+			execucoes = 10;
 			benchmarkName = "prime";
 			
 			break;
 		case 4:
-			inputList.add(1000);
-			inputList.add(10000);
-			inputList.add(100000);
-			execucoes = 10;
+			
+			if (estress_test){
+				list = UtilsFunctions.readFile("benchmark/linpack/input-linpack.txt");
+				for(int i = 1; i < list.size(); i++){
+					line = list.get(i);
+					
+					TaskItem ti = new TaskItem();
+					ti.index = Integer.valueOf(line.split(",")[0]);;
+					ti.workload = line.split(",")[1].trim();
+					inputListTask.add(ti);
+				}
+			}
+			else{
+				
+			}
+			sleep_time_replication = 30000;
+			constant_time = 1500;
+			execucoes = 1;
 			benchmarkName = "linpack";
 			
 			break;
@@ -393,25 +438,168 @@ public class CloudBench extends Activity implements OnClickListener, Runnable {
 			break;
 		}
 		
-		runBenchmark(execucoes, benchmarkName, inputList, runLocal, runCloud);
-		
+		runBenchmark2(execucoes, benchmarkName, inputList, inputListTask, 
+				runLocal, runCloud, sleep_time_replication, constant_time);	
 	}
 	
-	public void runBenchmark(final int execucoes, final String benchmarkName, final ArrayList<Integer> inputList,
-			final boolean runLocal, final boolean runCloud){
+	public void runBenchmark2(final int execucoes, final String benchmarkName, final ArrayList<Integer> inputList, final ArrayList<TaskItem> inputListTask,
+			final boolean runLocal, final boolean runCloud, final int sleep_time_interaction, final int constant_time){
 		Toast.makeText(getApplicationContext(), "Starting experiment ", Toast.LENGTH_LONG).show();
 		
 		long seed = System.nanoTime();
-//		Collections.shuffle(inputList, new Random(seed));
+		
+    	SystemClock.sleep(5000);
+    	
+		new Timer();
+		Timer.reset();
+		Timer.start();
+		ArrayList<Integer> experiments = new ArrayList<Integer>(3);
+		final ArrayList<String> array_result = new ArrayList<String>(10);
+		final ArrayList<Thread> threads_queue = new ArrayList<Thread>(10);
+		experiments.add(execucoes);
+		
+		int sizeInputList = inputList.size();
+		if(!inputListTask.isEmpty())
+			sizeInputList = inputListTask.size();
+		
+		String datetime = UtilsFunctions.getCurrentTime();
+		
+		String sufix = "_" + datetime + "_.txt";
+		String enviromnent = runLocal ? "local" : "cloud"; 
+		
+	    final String tmpfileNameLog = fileNameLog + "_" + benchmarkName +"_" + 
+	    							  enviromnent + "_" + (constant_time/1000.0) +"-segundos" + sufix;
+	    
+	    createFileResults(tmpfileNameLog, "Local | Cloud");
+	    String header = "\nIndex, 	DateTime,	Comp-local,	Request,	Server,	Response,	Total";
+	    UtilsFunctions.writeResults(tmpfileNameLog, header);
+	    
+	    for (int k = 0; k < experiments.size(); k++) {
+			int replicacoes = experiments.get(k);
+		    
+		    UtilsFunctions.writeResults(tmpfileNameLog, "\n\nExperimentos: " + String.valueOf(experiments.get(k)));
+		    
+		    for (int j = 0; j < replicacoes; j++) {
+				
+				UtilsFunctions.writeResults(tmpfileNameLog, "\nCaso " + String.valueOf(j+1));
+				
+			    final Starter start = new Starter();
+			    start.dataSaverInit();
+			    
+		    	final Queue<Thread> q = new LinkedList<Thread>();
+			    for (int i = 0; i < sizeInputList; i++) {
+			    	
+			    	final boolean last = (i+1) == sizeInputList ? true : false;
+		    		final TaskItem tk = inputListTask.get(i);
+			    	final long timestart = System.currentTimeMillis();
+			    	Thread th = new Thread(new Runnable() {
+			            public void run() { 
+			            	String id = String.valueOf(tk.getIndex());
+			            	if (benchmarkName == "prime"){
+					    		int input = Integer.valueOf(tk.getWorkload());
+					    		start.primeCalc2(input, runLocal, runCloud);
+					    	}
+					    	else if(benchmarkName == "linpack"){
+					    		int input = Integer.valueOf(tk.getWorkload());
+					    		start.linpackCalc2(input, runLocal, runCloud);
+					    	}
+					    	else if(benchmarkName == "image"){
+					    		String input, out; 
+					    		String[] strArray = tk.getWorkload().split(",");
+					    		input = strArray[0].trim();
+					    		out = strArray[1].trim();
+					    		start.imageBenchmark(input, out, runLocal, runCloud);
+					    	}
+			            	
+					    	String result_line = "\n" + id  + ", " + UtilsFunctions.getCurrentTime() + 
+					    						 ",	" + start.data.getPrimeCalcLocalResult() + 
+					    						 ",	" + start.data.getLogPrimeCalcCloudResult() + 
+					    						 ", " + (System.currentTimeMillis() - timestart) +
+					    						 ", " + q.size();
+					    	
+					    	UtilsFunctions.writeResults(tmpfileNameLog, result_line);
+					    	
+					    	if(!last){
+				            	try {
+				            		synchronized (lock) {
+				            			while (q.peek() == null) {
+				            	            lock.wait();
+				            	        }
+										Thread t = q.remove();
+								    	if (t != null){
+								    		t.start();
+								    	}
+									}
+								} catch (InterruptedException e) {
+									e.printStackTrace();
+								}
+					    	}else{
+					    		String a = id;
+					    	}
+					    	
+			            }
+					});
+			    	
+			    	if (i == 0){
+			    		th.start();
+			    	}
+			    	else{
+	            		synchronized (lock) {
+	            			q.add(th);
+					    	lock.notify();
+						}
+			    	}
+//			    	threads_queue.add(th);
+			    	
+			    	SystemClock.sleep(constant_time);
+			    	
+			    }
+//			    threads_queue.
+//			    for (int i = 0; i < threads_queue.size(); i++) {
+//			    	i = 0;
+//			    	SystemClock.sleep(constant_time);
+//					Thread t = threads_queue.get(i);
+//					t.start();
+//			    	try {
+//						t.join();
+//						threads_queue.remove(i);
+//					} catch (InterruptedException e) {
+//						e.printStackTrace();
+//					}
+//				}
+			    
+			    array_result.clear();
+			    System.gc();
+			    System.gc();
+				SystemClock.sleep(sleep_time_interaction);
+			}
+		}
+	    SystemClock.sleep(3000);
+	    playSound2();
+	    SystemClock.sleep(1500);
+	    finishActivity();
+		
+
+	}
+	
+	public void runBenchmark(final int execucoes, final String benchmarkName, final ArrayList<Integer> inputList, final ArrayList<TaskItem> inputListTask,
+			final boolean runLocal, final boolean runCloud, final int sleep_time_interaction){
+		Toast.makeText(getApplicationContext(), "Starting experiment ", Toast.LENGTH_LONG).show();
+		
+		long seed = System.nanoTime();
 		new Thread(new Runnable() {
             public void run() {
-            	SystemClock.sleep(30000);
+            	SystemClock.sleep(10000);
 				new Timer();
 				Timer.reset();
 				Timer.start();
 				ArrayList<Integer> experiments = new ArrayList<Integer>(3);
 				ArrayList<String> array_result = new ArrayList<String>(10);
 				experiments.add(execucoes);
+				
+				int sizeInputList = inputList.size();
+				if(!inputListTask.isEmpty())
+					sizeInputList = inputListTask.size();
 				
 				String datetime = UtilsFunctions.getCurrentTime();
 				
@@ -435,17 +623,29 @@ public class CloudBench extends Activity implements OnClickListener, Runnable {
 						array_result.add("\nCaso " + String.valueOf(j));
 						
 					    Starter start = new Starter();
-//					    start.setSntpClient(sntpclient);
 					    start.dataSaverInit();
 					    
-						for (int i = 0; i < inputList.size(); i++) {					    							
+						for (int i = 0; i < sizeInputList; i++) {
+							String id = String.valueOf(i).toString();
 					    	if (benchmarkName == "prime"){
-					    		start.primeCalc2(inputList.get(i), runLocal, runCloud);
+					    		id = String.valueOf(inputListTask.get(i).getIndex());
+					    		int input = Integer.valueOf(inputListTask.get(i).getWorkload());
+					    		start.primeCalc2(input, runLocal, runCloud);
 					    	}
 					    	else if(benchmarkName == "linpack"){
-					    		start.linpackCalc2(inputList.get(i), runLocal, runCloud);
+					    		id = String.valueOf(inputListTask.get(i).getIndex());
+					    		int input = Integer.valueOf(inputListTask.get(i).getWorkload());
+					    		start.linpackCalc2(input, runLocal, runCloud);
 					    	}
-					    	array_result.add("\n" + String.valueOf(i).toString() + ", " + UtilsFunctions.getCurrentTime() + ",	" + start.data.getPrimeCalcLocalResult() + 
+					    	else if(benchmarkName == "image"){
+					    		id = String.valueOf(inputListTask.get(i).getIndex());
+					    		String input, out; 
+					    		String[] strArray = inputListTask.get(i).getWorkload().split(",");
+					    		input = strArray[0].trim();
+					    		out = strArray[1].trim();
+					    		start.imageBenchmark(input, out, runLocal, runCloud);
+					    	}
+					    	array_result.add("\n" + id  + ", " + UtilsFunctions.getCurrentTime() + ",	" + start.data.getPrimeCalcLocalResult() + 
 					    					 ",	" + start.data.getLogPrimeCalcCloudResult());
 					    	
 					    	if(array_result.size() == 5){
@@ -455,9 +655,12 @@ public class CloudBench extends Activity implements OnClickListener, Runnable {
 					    }
 					    UtilsFunctions.writeResults(tmpfileNameLog, array_result);
 					    array_result.clear();
+					    System.gc();
+					    System.gc();
+						SystemClock.sleep(sleep_time_interaction);
 					}
 				}
-			    SystemClock.sleep(30000);
+			    SystemClock.sleep(3000);
 			    playSound2();
 			    SystemClock.sleep(1500);
 			    finishActivity();
@@ -569,7 +772,7 @@ public class CloudBench extends Activity implements OnClickListener, Runnable {
             }
     	};
 	
-    	public void startServiceThread(){
+	public void startServiceThread(){
 		
     		threadMetricCollector = new Thread(new Runnable(){
 			Boolean running = true;

@@ -10,6 +10,7 @@ import android.util.Log;
 import com.downloaduploadspeed.DownloadUploadSpeed;
 import com.image.ImageTransformCloud;
 import com.image.ImageTransformLocal;
+import com.image2.ImageBenchmarkLocal;
 import com.linpack.LinpackCloud;
 import com.linpack.LinpackLocal;
 import com.listsorter.ListSorterLocal;
@@ -95,14 +96,12 @@ public class Starter {
 		}
 	}
 	
-	
 	public void linpackCalc2(int parameter, boolean runLocal, boolean runCloud) {
 		String inUrl = "http://177.71.149.2:8080/ServletBenchmarks/linpackcalc?validate=1234";
 		
 		if (parameter > 0)
 			inUrl += "&parameter=" + String.valueOf(parameter);
 		inUrl += "&send_time=" + System.currentTimeMillis();
-//		Log.i("cloudbench1_time", String.valueOf(sntpclient.getNtpTime()));
 		Log.i("cloudbench1", inUrl);
 		
 		if(runLocal){
@@ -162,6 +161,40 @@ public class Starter {
 		this.data.setTestData(imageTransformLocal + "==" + imageTransformCloud);
 		
 		//return imageTransformLocal + "==" + imageTransformCloud;
+	}
+	
+	public void imageBenchmark(String fileNameInput, String outfilename, boolean runLocal, boolean runCloud) {
+		
+		String inUrl = "http://177.71.149.2:8080/ServletBenchmarks/linpackcalc?validate=1234";
+
+		inUrl += "&send_time=" + System.currentTimeMillis();
+		Log.i("cloudbench1", inUrl);
+		
+		if(runLocal){
+			ImageBenchmarkLocal imgbm = new ImageBenchmarkLocal();
+			imgbm.localImageBenchmark(fileNameInput, outfilename);
+//			String primeCalcLocalTest = imgbm.returnTime();
+			this.data.setPrimeCalcLocalResult(Float.toString(imgbm.returnTime()));
+			return;
+		}
+		
+		if(runCloud){
+			
+			ImageTransformLocal local = new ImageTransformLocal();
+//			String imageTransformLocal = local.localImageSizeFlip(in, tempSaveImage1);
+			this.data.setImageTransformLocalResult(Float.toString(local.returnTime()));
+			this.data.setErrorMessage(local.errorMessage());
+			
+			String urlIn = "http://example.appspot.com/upload?validate=1234";
+			ImageTransformCloud cloud = new ImageTransformCloud();
+//			String imageTransformCloud = cloud.imageCloud(urlIn, filen, tempSaveImage2);
+			this.data.setImageTransformCloudResult(Float.toString(cloud.returnTime()));
+			this.data.setErrorMessage(cloud.errorMessage());
+//			this.data.setTestData(imageTransformLocal + "==" + imageTransformCloud);
+			
+			//return imageTransformLocal + "==" + imageTransformCloud;
+			
+		}
 	} 
 	
 	public void savePhoneInfo(String phoneModel, String fingerPrint, String phoneSDK, String connectionInfo) {

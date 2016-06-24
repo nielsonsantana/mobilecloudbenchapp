@@ -3,6 +3,8 @@ package com.utils;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -16,7 +18,7 @@ import android.util.Log;
 
 public class UtilsFunctions {
 	
-	static String TAG = "cloudbench";
+	static String TAG = "com.cloudbench";
 	
 	
 	public static void writeResults(String fileName, ArrayList<String> data) {
@@ -29,15 +31,24 @@ public class UtilsFunctions {
 				bufferWritter.write(data.get(i));
 			}
 			bufferWritter.close();
-//			Toast.makeText(getBaseContext(),
-//					"Done writing SD 'mysdfile.txt'",
-//					Toast.LENGTH_SHORT).show();
+
 		} catch (Exception e) {
 			Log.e("Exception", e.getMessage());
-//			Toast.makeText(getBaseContext(), e.getMessage(),
-//					Toast.LENGTH_LONG).show();
 		}
 	}
+	
+	public static void writeResults(String fileName, String singleLine) {
+		try {
+			FileWriter fileWritter = new FileWriter(fileName, true);
+			
+			BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
+			bufferWritter.write(singleLine);
+			bufferWritter.close();
+		} catch (Exception e) {
+			Log.e("Exception", e.getMessage());
+		}
+	}
+	
 	
 	public static String getCurrentTime(){
 		DateFormat df = new SimpleDateFormat("yyyy-MM-dd-HH.mm.ss.SSS");
@@ -51,6 +62,7 @@ public class UtilsFunctions {
 		//*Don't* hardcode "/sdcard"
 		Log.d(TAG, "Reading file "+ filename +"...");
 		File sdcard = Environment.getExternalStorageDirectory();
+		ArrayList<String> list = new ArrayList<String>();
 
 		//Get the text file
 		File file = new File(sdcard,filename);
@@ -63,8 +75,8 @@ public class UtilsFunctions {
 		    String line;
 
 		    while ((line = br.readLine()) != null) {
-		        text.append(line);
-		        text.append('\n');
+		    	line = line.replace("\n", "");
+		    	list.add(line);
 		    }
 		    br.close();
 		}
@@ -73,7 +85,48 @@ public class UtilsFunctions {
 		}
 
 		//Find the view by its id
-		return new ArrayList<String>();
+		return list;
+	}
+	
+	public static File getFile(String filename){
+	    //Find the directory for the SD Card using the API
+		//*Don't* hardcode "/sdcard"
+		Log.d(TAG, "Reading file "+ filename +"...");
+		File sdcard = Environment.getExternalStorageDirectory();
+
+		//Get the text file
+		File file = new File(sdcard,filename);
+
+		//Find the view by its id
+		return file;
+	}
+	
+	public static String getFullFilename(String filename){
+		Log.d(TAG, "Reading file "+ filename +"...");
+		File sdcard = Environment.getExternalStorageDirectory();
+
+		//Get the text file
+		File file = new File(sdcard,filename);
+		
+		return file.getAbsolutePath();
+		//Find the view by its id
+//		return file;
+	}
+	
+	public static FileOutputStream saveImage(String filename){
+		Log.d(TAG, "Writing file "+ filename +"...");
+		File sdcard = Environment.getExternalStorageDirectory();
+		FileOutputStream out = null;
+		try {
+			File file = new File(sdcard,filename);
+			out = new FileOutputStream(file);
+			
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		//Get the text file
+		
+		return out;
 	}
 	
 }

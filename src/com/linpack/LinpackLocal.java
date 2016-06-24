@@ -10,8 +10,15 @@ public class LinpackLocal extends BaseBenchmark {
     private long time;
     
     public void runLinpack(int parametro) {
-    	Linpack l = new Linpack();
+		new Timer();
+		Timer.reset();
+		Timer.start();
+    	
+		Linpack l = new Linpack();
     	l.run_benchmark(parametro);
+    	
+		Timer.stop();
+		this.time = Timer.result();
     }
 
     public String returnNumber() {
