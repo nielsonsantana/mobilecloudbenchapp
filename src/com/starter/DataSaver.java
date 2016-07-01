@@ -24,6 +24,8 @@ public class DataSaver {
 	private String computeTimeLocalResult;
 	
 	private String primeCalcCloudResult;
+	private String totalTimeLocalResult;
+	private String totalTimeCloudResult;
 	private String computeTimeServerCloudResult;
 	private String requestTimeCloudResult;
 	private String responseTimeCloudResult;
@@ -59,8 +61,37 @@ public class DataSaver {
 		return responseTimeCloudResult;
 	}
 
+	public String getTotalTimeCloudResult() {
+		return totalTimeCloudResult;
+	}
+
+	public void setTotalTimeCloudResult(String totalTimeCloudResult) {
+		this.totalTimeCloudResult = totalTimeCloudResult;
+	}
+
 	public void setResponseTimeCloudResult(String responseTimeCloudResult) {
 		this.responseTimeCloudResult = responseTimeCloudResult;
+	}
+	
+	public String getTotalTimeLocalResult() {
+		return totalTimeLocalResult;
+	}
+
+	public void setTotalTimeLocalResult(String totalTimeLocalResult) {
+		this.totalTimeLocalResult = totalTimeLocalResult;
+	}
+
+	public long getLogLocalResultMilliseconds() {
+		return (Long.valueOf(this.totalTimeLocalResult));
+	}
+	
+	public String getLogLocalResult() {
+		return (Float.valueOf(this.totalTimeLocalResult)/1000.) + "";
+	}
+	
+	public String getLogCloudResult() {
+		return Float.valueOf(this.requestTimeCloudResult)/1000. + ",  " + Float.valueOf(this.computeTimeServerCloudResult)/1000. + 
+				",  " + Float.valueOf(this.responseTimeCloudResult)/1000. + ",  "+ Float.valueOf(this.getTotalTimeCloudResult())/1000.;
 	}
 
 	public String getPhoneInfo() {
@@ -97,9 +128,9 @@ public class DataSaver {
 	
 	public String getLogPrimeCalcCloudResult() {
 		return this.requestTimeCloudResult + ",  " + this.computeTimeServerCloudResult + 
-				",  " + this.responseTimeCloudResult + ",  "+ this.primeCalcCloudResult;
+				",  " + this.responseTimeCloudResult + ",  "+ this.getTotalTimeCloudResult();
 	}
-
+	
 	public String getListSorterLocalResult() {
 		return listSorterLocalResult;
 	}

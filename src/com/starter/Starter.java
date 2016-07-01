@@ -78,8 +78,8 @@ public class Starter {
 		if(runLocal){
 			PrimeCalcLocal primeCalc = new PrimeCalcLocal();
 			primeCalc.calculatePrimeNumbers(max_limit);
-			String primeCalcLocalTest = primeCalc.returnNumber();
-			this.data.setPrimeCalcLocalResult(Float.toString(primeCalc.returnTime()));
+//			String primeCalcLocalTest = primeCalc.returnNumber();
+			this.data.setTotalTimeLocalResult(Float.toString(primeCalc.returnTime()));
 		}
 		
 		if(runCloud){
@@ -91,8 +91,8 @@ public class Starter {
 			this.data.setResponseTimeCloudResult(String.valueOf(pcloud.getResponseTime()));
 			Log.i("cloudbench1", this.data.getComputeTimeServerCloudResult());
 			this.data.setErrorMessage(pcloud.errorMessage());
-			String primeCalcCloudTest = pcloud.returnNumber();
-			this.data.setPrimeCalcCloudResult(Float.toString(pcloud.returnTime()));
+//			String primeCalcCloudTest = pcloud.returnNumber();
+			this.data.setTotalTimeCloudResult(Float.toString(pcloud.returnTime()));
 		}
 	}
 	
@@ -107,8 +107,8 @@ public class Starter {
 		if(runLocal){
 			LinpackLocal pCalc = new LinpackLocal();
 			pCalc.runLinpack(parameter);
-			String primeCalcLocalTest = pCalc.returnNumber();
-			this.data.setPrimeCalcLocalResult(Float.toString(pCalc.returnTime()));
+//			String primeCalcLocalTest = pCalc.returnNumber();
+			this.data.setTotalTimeLocalResult(Float.toString(pCalc.returnTime()));
 		}
 		
 		if(runCloud){
@@ -120,9 +120,43 @@ public class Starter {
 			Log.i("cloudbench1", this.data.getComputeTimeServerCloudResult());
 			this.data.setErrorMessage(pcloud.errorMessage());
 //			String primeCalcCloudTest = pcloud.returnNumber();
-			this.data.setPrimeCalcCloudResult(Float.toString(pcloud.returnTime()));
+			this.data.setTotalTimeCloudResult(Float.toString(pcloud.returnTime()));
 		}
 	}
+	
+	public void imageBenchmark(String fileNameInput, String outfilename, boolean runLocal, boolean runCloud) {
+		
+		String inUrl = "http://177.71.149.2:8080/ServletBenchmarks/linpackcalc?validate=1234";
+
+		inUrl += "&send_time=" + System.currentTimeMillis();
+		Log.i("cloudbench1", inUrl);
+		
+		if(runLocal){
+			ImageBenchmarkLocal imgbm = new ImageBenchmarkLocal();
+			imgbm.localImageBenchmark(fileNameInput, outfilename);
+			this.data.setTotalTimeLocalResult(Float.toString(imgbm.returnTime()));
+			return;
+		}
+		
+		if(runCloud){
+			
+			ImageTransformLocal imgbm = new ImageTransformLocal();
+//			String imageTransformLocal = local.localImageSizeFlip(in, tempSaveImage1);
+			this.data.setImageTransformLocalResult(Float.toString(imgbm.returnTime()));
+			this.data.setErrorMessage(imgbm.errorMessage());
+			
+			String urlIn = "http://example.appspot.com/upload?validate=1234";
+			ImageTransformCloud cloud = new ImageTransformCloud();
+//			String imageTransformCloud = cloud.imageCloud(urlIn, filen, tempSaveImage2);
+			this.data.setImageTransformCloudResult(Float.toString(cloud.returnTime()));
+			this.data.setErrorMessage(cloud.errorMessage());
+//			this.data.setTestData(imageTransformLocal + "==" + imageTransformCloud);
+			
+			//return imageTransformLocal + "==" + imageTransformCloud;
+			this.data.setTotalTimeCloudResult(Float.toString(imgbm.returnTime()));
+			
+		}
+	} 
 	
 	public void listSorter(List<String> wordList, String textString) {
 	//public String listSorter(List<String> wordList, String textString) {
@@ -163,39 +197,6 @@ public class Starter {
 		//return imageTransformLocal + "==" + imageTransformCloud;
 	}
 	
-	public void imageBenchmark(String fileNameInput, String outfilename, boolean runLocal, boolean runCloud) {
-		
-		String inUrl = "http://177.71.149.2:8080/ServletBenchmarks/linpackcalc?validate=1234";
-
-		inUrl += "&send_time=" + System.currentTimeMillis();
-		Log.i("cloudbench1", inUrl);
-		
-		if(runLocal){
-			ImageBenchmarkLocal imgbm = new ImageBenchmarkLocal();
-			imgbm.localImageBenchmark(fileNameInput, outfilename);
-//			String primeCalcLocalTest = imgbm.returnTime();
-			this.data.setPrimeCalcLocalResult(Float.toString(imgbm.returnTime()));
-			return;
-		}
-		
-		if(runCloud){
-			
-			ImageTransformLocal local = new ImageTransformLocal();
-//			String imageTransformLocal = local.localImageSizeFlip(in, tempSaveImage1);
-			this.data.setImageTransformLocalResult(Float.toString(local.returnTime()));
-			this.data.setErrorMessage(local.errorMessage());
-			
-			String urlIn = "http://example.appspot.com/upload?validate=1234";
-			ImageTransformCloud cloud = new ImageTransformCloud();
-//			String imageTransformCloud = cloud.imageCloud(urlIn, filen, tempSaveImage2);
-			this.data.setImageTransformCloudResult(Float.toString(cloud.returnTime()));
-			this.data.setErrorMessage(cloud.errorMessage());
-//			this.data.setTestData(imageTransformLocal + "==" + imageTransformCloud);
-			
-			//return imageTransformLocal + "==" + imageTransformCloud;
-			
-		}
-	} 
 	
 	public void savePhoneInfo(String phoneModel, String fingerPrint, String phoneSDK, String connectionInfo) {
 		this.data.setPhoneDetails(phoneModel, fingerPrint, phoneSDK, connectionInfo);

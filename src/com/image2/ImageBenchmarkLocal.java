@@ -63,7 +63,6 @@ public class ImageBenchmarkLocal {
 	           resizedBitmap = null;
 	           
 	           System.gc();
-	           System.gc();
 	           
                } catch (Exception e) {
                    this.time = -1;

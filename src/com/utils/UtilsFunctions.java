@@ -15,11 +15,25 @@ import java.util.Date;
 
 import android.os.Environment;
 import android.util.Log;
+import android.widget.Toast;
 
 public class UtilsFunctions {
 	
 	static String TAG = "com.cloudbench";
 	
+	public static void createFileResults(String fileName, String header) {
+		try {
+			FileWriter fileWritter = new FileWriter(fileName);
+			
+			BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
+			bufferWritter.write(header);
+			bufferWritter.flush();
+			bufferWritter.close();
+		}
+		catch(Exception e) {
+			Log.e(TAG, fileName + e.getMessage());
+		}
+	}
 	
 	public static void writeResults(String fileName, ArrayList<String> data) {
 		try {
@@ -30,6 +44,7 @@ public class UtilsFunctions {
 			for (int i = 0; i < data.size(); i++) {
 				bufferWritter.write(data.get(i));
 			}
+			bufferWritter.flush();
 			bufferWritter.close();
 
 		} catch (Exception e) {
@@ -43,6 +58,7 @@ public class UtilsFunctions {
 			
 			BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
 			bufferWritter.write(singleLine);
+			bufferWritter.flush();
 			bufferWritter.close();
 		} catch (Exception e) {
 			Log.e("Exception", e.getMessage());
