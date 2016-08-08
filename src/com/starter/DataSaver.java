@@ -21,15 +21,17 @@ public class DataSaver {
 	private String uploadSpeed;
 	private String errorMessage = "";
 	private String primeCalcLocalResult;
-	private String computeTimeLocalResult;
 	
-	private String primeCalcCloudResult;
-	private String totalTimeLocalResult;
-	private String totalTimeCloudResult;
-	private String computeTimeServerCloudResult;
-	private String requestTimeCloudResult;
-	private String responseTimeCloudResult;
-	private string batteryLevelLocal;
+	private String resultCloud = "";
+	private String resultLocal = "";
+	
+	private String primeCalcCloudResult = "";
+	private String totalTimeLocalResult = "";
+	private String totalTimeCloudResult = "";
+	private String computeTimeLocalResult = "";
+	private String computeTimeServerCloudResult = "";
+	private String requestTimeCloudResult = "";
+	private String responseTimeCloudResult = "";
 	
 	private String listSorterLocalResult;
 	
@@ -82,16 +84,25 @@ public class DataSaver {
 	}
 
 	public long getLogLocalResultMilliseconds() {
-		return (Long.valueOf(this.totalTimeLocalResult));
+		return (long)(Float.valueOf(this.totalTimeLocalResult)*1);
 	}
 	
 	public String getLogLocalResult() {
-		return (Float.valueOf(this.totalTimeLocalResult)/1000.) + "";
+		if(this.totalTimeLocalResult != "")
+			return (Float.valueOf(this.totalTimeLocalResult)/1000.) + "";
+		return null;
+	}
+	
+	private String ToSecondsOrNull(String value){
+		if(value != ""){
+			return (Float.valueOf(value)/1000.)+"";
+		}
+		return null;
 	}
 	
 	public String getLogCloudResult() {
-		return Float.valueOf(this.requestTimeCloudResult)/1000. + ",  " + Float.valueOf(this.computeTimeServerCloudResult)/1000. + 
-				",  " + Float.valueOf(this.responseTimeCloudResult)/1000. + ",  "+ Float.valueOf(this.getTotalTimeCloudResult())/1000.;
+		return ToSecondsOrNull(this.requestTimeCloudResult)+ ",  " + ToSecondsOrNull(this.computeTimeServerCloudResult) + 
+				",  " + ToSecondsOrNull(this.responseTimeCloudResult)+ ",  "+ ToSecondsOrNull(this.getTotalTimeCloudResult());
 	}
 
 	public String getPhoneInfo() {
@@ -205,7 +216,7 @@ public class DataSaver {
 	
 	public void setTestData(String testData) {
 		this.testData += testData;
-	}		
+	}
 	
 	public void sendResults(String urlGet, String urlPost) {
         DefaultHttpClient httpclient = new DefaultHttpClient();

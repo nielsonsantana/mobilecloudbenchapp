@@ -20,6 +20,10 @@ public class Timer {
 		}
 	}
 	
+	public static float result_seconds(){
+		return (result()/1000);
+	}
+	
 	public static void reset() {
 		start = 0;
 		stop = 0;

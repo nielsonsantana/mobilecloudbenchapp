@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="src" path="gen"/>
-	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
+	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
 	<classpathentry kind="lib" path="libs/commons-io-1.4.jar"/>
 	<classpathentry kind="lib" path="libs/httpmime-4.3.jar"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="gen"/>
+	<classpathentry kind="lib" path="libs/linpackbm.jar"/>
+	<classpathentry kind="lib" path="libs/httpclient-4.5.2.jar"/>
+	<classpathentry kind="lib" path="libs/httpcore-4.4.4.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/android-lib-magick"/>
+	<classpathentry kind="lib" path="libs/primebm.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

@@ -25,11 +25,10 @@
    		
    		
    	<string-array name="benchmark_arrays">
-        <item>DataSaver</item>
-        <item>List Sort</item>
+        <item>Image Benchmark</item>
         <item>Prime Calc</item>
-        <item>Upload/Download</item>
         <item>Linpack benchmark</item>
+        <item>Upload/Download</item>
     </string-array>
     
     </resources>

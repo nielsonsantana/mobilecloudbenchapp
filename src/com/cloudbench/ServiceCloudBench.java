@@ -11,7 +11,7 @@ import java.util.TooManyListenersException;
 import com.linpack.LinpackLocal;
 import com.starter.Starter;
 import com.timer.Timer;
-import com.utils.UtilsFunctions;
+import com.utils.Utils;
 
 //import net.jaqpot.netcounter.HandlerContainer;
 //import net.jaqpot.netcounter.NetCounterApplication;
@@ -41,14 +41,12 @@ import android.view.Menu;
 import android.widget.Toast;
 
 public class ServiceCloudBench extends Service  {
-//public class MyService extends Service {
 	private static String TAG = "MyService";
 	public String LOG_MONITOR_BATERIA_TAG = "LOG_BATTERIA";
     public String log_monitor_bateria = "";
 	private String logFileName = "/sdcard/outLogCollectMetrics.txt";
 	
 	private static final int NOTIFYID = 20100811;
-//	private IpcService ipcService = null;
 	
 	public String BENCHMARK = "BENCHMARK";
 	
@@ -56,84 +54,7 @@ public class ServiceCloudBench extends Service  {
 	public void onCreate() {
 		Toast.makeText(this, "Congrats! MyService Created", Toast.LENGTH_SHORT).show();
 		Log.d(TAG, "onCreateService");
-//		startBenchLinpackLocal();
 	}
-	
-	public void startBenchLinpackLocal(){
-		for (int i = 0; i < 1000; i++) {
-			new LinpackLocal().runLinpack(1);
-		}
-	}
-	
-//	public void startBenchmark(){
-////		new Thread(new Runnable() {
-////            public void run() {
-//				new Timer();
-//				Timer.reset();
-//				Timer.start();
-//				ArrayList<Integer> timeExperiments = new ArrayList<Integer>(3);
-//				ArrayList<String> array_result = new ArrayList<String>(10);
-//				timeExperiments.add(1);
-//				timeExperiments.add(2);
-//				timeExperiments.add(3);
-//				String tmpfileNameLog = fileNameLog + ".txt";
-//				
-//			    if(runLocal)
-//			    	tmpfileNameLog = fileNameLog + "_local.txt";
-//			    if(runCloud)
-//			    	tmpfileNameLog = fileNameLog + "_cloud.txt";
-//			    
-//			    createFileResults(tmpfileNameLog, "Local | Cloud");
-//			    array_result.add("\nIndex, Comp-local | Request, Server, Response, Total" );
-//			    for (int k = 0; k < timeExperiments.size(); k++) {
-//					int interacaos = timeExperiments.get(k);
-//					int time = timeExperiments.get(k);
-//					
-//					Toast.makeText(getApplicationContext(), "Starting experiment time: " + String.valueOf(time), Toast.LENGTH_SHORT).show();
-//
-//					Toast.makeText(getApplicationContext(), "Starting experiment ", Toast.LENGTH_LONG).show();
-//					    
-//					ArrayList<Integer> arrlist = new ArrayList<Integer>(7);
-//				    arrlist.add(100);
-//				    arrlist.add(1000);
-//				    arrlist.add(10000);
-//				    arrlist.add(100000);
-//				    arrlist.add(1000000);
-//				    
-//				    array_result.add("\n\nExperimento: " + String.valueOf(timeExperiments.get(k)));
-//					
-////					Log.d("log_cloud", String.valueOf(arrlist.size()));
-//					for (int i = 0; i < arrlist.size(); i++) {
-//						array_result.add("\nCaso " + String.valueOf(i));
-//						
-//					    Starter start = new Starter();
-//					    start.setSntpClient(sntpclient);
-//					    start.dataSaverInit();
-//					    
-////						array_result.add("\n" + String.valueOf(time) + ", " + String.valueOf(Timer.result()/100.0));
-//						
-//					    for (int j = 0; j < interacaos; j++) {
-//					    	start.primeCalc2(arrlist.get(i), runLocal, runCloud);
-//					    	array_result.add("\n" + String.valueOf(j).toString() + ",	" + start.data.getPrimeCalcLocalResult() + 
-//					    					 ",	" + start.data.getLogPrimeCalcCloudResult());
-//					    	
-//					    	if(array_result.size() == 5){
-//					    		UtilsFunctions.writeResults(tmpfileNameLog, array_result);
-//					    		array_result.clear();
-//					    	}
-//					    }
-//					    Toast.makeText(getApplicationContext(), "Finished " + String.valueOf(i), Toast.LENGTH_SHORT).show();
-//					    UtilsFunctions.writeResults(tmpfileNameLog, array_result);
-//					    array_result.clear();
-//					}
-//					Toast.makeText(getApplicationContext(), "Finishing:" + String.valueOf(time) + ", " + String.valueOf(Timer.result()/100.0), Toast.LENGTH_LONG).show();
-//				}
-//			    
-//			    Toast.makeText(getApplicationContext(), "EXPERIMENT FINISHED", Toast.LENGTH_LONG).show();
-//			    
-////            }
-////		}).start();
-//	}
 	
 	private final BroadcastReceiver mWifiReceiver = new BroadcastReceiver() {
 		@Override
@@ -199,6 +120,49 @@ public class ServiceCloudBench extends Service  {
         }
 
     };
+    
+ // Capiturar nivel de baterria sem monitora-la
+// 	public float getBatteryLevel() {
+// 	    Intent batteryIntent = registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+// 	    int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+// 	    int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+// 	    int voltage = batteryIntent.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 0);
+//
+// 	    // Error checking that probably isn't needed but I added just in case.
+// 	    if(level == -1 || scale == -1) {
+// 	        return 50.0f;
+// 	    }
+// 	    Log.i("Battery", "Baterry scale: " + String.valueOf(scale) + " Level:" + String.valueOf(level));
+// 	    //return ((float)level / (float)scal	e) * 100.0f; 
+// 	    return (float)voltage;
+// 	}
+ 	
+     public void getBatteryCapacity() {
+         Object mPowerProfile_ = null;
+
+         final String POWER_PROFILE_CLASS = "com.android.internal.os.PowerProfile";
+
+         try {
+             mPowerProfile_ = Class.forName(POWER_PROFILE_CLASS)
+                     .getConstructor(Context.class).newInstance(this);
+         } catch (Exception e) {
+             e.printStackTrace();
+             Log.i("Battery", e.getMessage() );
+         } 
+
+         try {
+             double batteryCapacity = (Double) Class
+                     .forName(POWER_PROFILE_CLASS)
+                     .getMethod("getAveragePower", java.lang.String.class)
+                     .invoke(mPowerProfile_, "battery.capacity");
+             Toast.makeText(this, batteryCapacity + " mah",
+                     Toast.LENGTH_LONG).show();
+             Log.i("Battery", String.valueOf(batteryCapacity));
+         } catch (Exception e) {
+             e.printStackTrace();
+             Log.i("Battery", e.getMessage());
+         } 
+     }
 	
     private BroadcastReceiver mConnReceiver = new BroadcastReceiver() {
         @Override

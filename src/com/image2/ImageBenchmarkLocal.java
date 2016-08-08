@@ -14,10 +14,11 @@ import android.graphics.Matrix;
 import android.util.Log;
 
 import com.timer.Timer;
-import com.utils.UtilsFunctions;
+import com.utils.Utils;
 
 import ij.*;
 import ij.plugin.filter.Benchmark;
+import ij.plugin.filter.ImageMath;
 
 import ufrpe.com.imagebenchmark.*;
 
@@ -34,14 +35,14 @@ public class ImageBenchmarkLocal {
            
            Bitmap resizedBitmap = null;
            try {
-	           
+        	   
         	   BitmapFactory.Options opts = new BitmapFactory.Options();
 	           opts.inJustDecodeBounds = false;
 	           opts.inPreferredConfig = Config.RGB_565;
 	           opts.inDither = true;
 	           
         	   Bitmap bMap = BitmapFactory.decodeFile(
-        			   UtilsFunctions.getFullFilename(filename), opts);
+        			   Utils.getFullFilename(filename), opts);
         	   
         	   float scaleWidth =  bMap.getWidth();
         	   float scaleHeight = bMap.getHeight();
@@ -55,7 +56,7 @@ public class ImageBenchmarkLocal {
 
 	           bMap = null;
 	           
-	           FileOutputStream out = UtilsFunctions.saveImage(outfilename);
+	           FileOutputStream out = Utils.saveImage(outfilename);
 	           resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
 	           
 	           result = resizedBitmap.getHeight() + "" + resizedBitmap.getWidth() + "";

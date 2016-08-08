@@ -3,6 +3,7 @@ package com.starter;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import android.util.Log;
@@ -48,79 +49,72 @@ public class Starter {
 		}
 	}
 	
-	public String primeCalc() {
-		String inUrl = "http://primecalcappufrpe.appspot.com/primecalcappengine?validate=1234";
-		
-		PrimeCalcLocal primeCalc = new PrimeCalcLocal();
-		//
-		primeCalc.calculatePrimeNumbers(0);
-		String primeCalcLocalTest = primeCalc.returnNumber();
-		this.data.setPrimeCalcLocalResult(Float.toString(primeCalc.returnTime()));
-		
-		PrimeCalcCloud primeInteract = new PrimeCalcCloud();
-		primeInteract.primeInteract(inUrl);
-		this.data.setErrorMessage(primeInteract.errorMessage());
-		String primeCalcCloudTest = primeInteract.returnNumber();
-		this.data.setPrimeCalcCloudResult(Float.toString(primeInteract.returnTime()));
-		this.data.setTestData(primeCalcLocalTest + "==" + primeCalcCloudTest +"&");
-		
-		return primeCalcLocalTest + "-" + primeCalcCloudTest;
-	}
-	
 	public void primeCalc2(int max_limit, boolean runLocal, boolean runCloud) {
-		String inUrl = "http://177.71.149.2:8080/ServletBenchmarks/primecalc2?validate=1234";
+//		String inUrl = "http://177.71.149.2:8080/ServletBenchmarks/primecalc2?validate=1234";
+		String inUrl = "http://177.71.149.2:5000/primecalc?validate=1234";
 		
-		if (max_limit > 0)
-			inUrl += "&max_limit=" + String.valueOf(max_limit);
-		inUrl += "&send_time=" + System.currentTimeMillis();
-//		Log.i("cloudbench1_time", String.valueOf(sntpclient.getNtpTime()));
+		HashMap<String, String> p = new HashMap<String, String>();
 		
 		if(runLocal){
+			p.put("input", max_limit+"");
 			PrimeCalcLocal primeCalc = new PrimeCalcLocal();
-			primeCalc.calculatePrimeNumbers(max_limit);
-//			String primeCalcLocalTest = primeCalc.returnNumber();
-			this.data.setTotalTimeLocalResult(Float.toString(primeCalc.returnTime()));
+			primeCalc.startBenchmarkLocal(p);
+			
+			this.data.setTotalTimeLocalResult(Float.toString(primeCalc.getTotalResponseTime()));
+			this.data.setErrorMessage(primeCalc.getErrorMessage());
 		}
 		
 		if(runCloud){
+			inUrl += "&max_limit=" + String.valueOf(max_limit);
+			inUrl += "&send_time=" + System.currentTimeMillis();
+			
+			p.put("input", inUrl);
 			Log.i("cloudbench1", inUrl);
 			PrimeCalcCloud pcloud = new PrimeCalcCloud();
-			pcloud.primeInteract(inUrl);
-			this.data.setComputeTimeServerCloudResult(String.valueOf(pcloud.getComputeTimeServer()));
-			this.data.setRequestTimeCloudResult(String.valueOf(pcloud.getRequestTime()));
-			this.data.setResponseTimeCloudResult(String.valueOf(pcloud.getResponseTime()));
+			pcloud.startBenchmarkCloud(p);
+			this.data.setComputeTimeServerCloudResult(String.valueOf(pcloud.getComputeTimeOnServer()));
+			this.data.setRequestTimeCloudResult(String.valueOf(pcloud.getRequestNetworkTime()));
+			this.data.setResponseTimeCloudResult(String.valueOf(pcloud.getResponseNetworkTime()));
 			Log.i("cloudbench1", this.data.getComputeTimeServerCloudResult());
-			this.data.setErrorMessage(pcloud.errorMessage());
-//			String primeCalcCloudTest = pcloud.returnNumber();
-			this.data.setTotalTimeCloudResult(Float.toString(pcloud.returnTime()));
+			this.data.setErrorMessage(pcloud.getErrorMessage());
+			
+			this.data.setTotalTimeCloudResult(Float.toString(pcloud.getTotalResponseTime()));
 		}
 	}
 	
-	public void linpackCalc2(int parameter, boolean runLocal, boolean runCloud) {
-		String inUrl = "http://177.71.149.2:8080/ServletBenchmarks/linpackcalc?validate=1234";
-		
-		if (parameter > 0)
-			inUrl += "&parameter=" + String.valueOf(parameter);
-		inUrl += "&send_time=" + System.currentTimeMillis();
-		Log.i("cloudbench1", inUrl);
+	public void linpackCalc(int parameter, boolean runLocal, boolean runCloud) {
+//		String inUrl = "http://177.71.149.2:8080/ServletBenchmarks/linpackcalc?validate=1234";
+		String inUrl = "http://177.71.149.2:5000/linpack?validate=1234";
+
+		HashMap<String, String> p = new HashMap<String, String>();
 		
 		if(runLocal){
+			
+			p.put("input", parameter+"");
+			
 			LinpackLocal pCalc = new LinpackLocal();
-			pCalc.runLinpack(parameter);
-//			String primeCalcLocalTest = pCalc.returnNumber();
-			this.data.setTotalTimeLocalResult(Float.toString(pCalc.returnTime()));
+			pCalc.startBenchmarkLocal(p);
+			
+			this.data.setTotalTimeLocalResult(Float.toString(pCalc.getTotalResponseTime()));
 		}
 		
 		if(runCloud){
+			
+			inUrl += "&parameter=" + String.valueOf(parameter);
+			inUrl += "&send_time=" + System.currentTimeMillis();
+			Log.i("cloudbench1", inUrl);
+			
+			p.put("input", inUrl);
+			
 			LinpackCloud pcloud = new LinpackCloud();
-			pcloud.runInteract(inUrl);
-			this.data.setComputeTimeServerCloudResult(String.valueOf(pcloud.getComputeTimeServer()));
-			this.data.setRequestTimeCloudResult(String.valueOf(pcloud.getRequestTime()));
-			this.data.setResponseTimeCloudResult(String.valueOf(pcloud.getResponseTime()));
-			Log.i("cloudbench1", this.data.getComputeTimeServerCloudResult());
-			this.data.setErrorMessage(pcloud.errorMessage());
+			pcloud.startBenchmarkCloud(p);
+			this.data.setComputeTimeServerCloudResult(String.valueOf(pcloud.getComputeTimeOnServer()));
+			this.data.setRequestTimeCloudResult(String.valueOf(pcloud.getRequestNetworkTime()));
+			this.data.setResponseTimeCloudResult(String.valueOf(pcloud.getResponseNetworkTime()));
+//			Log.i("cloudbench1", this.data.getComputeTimeServerCloudResult());
+//			this.data.setErrorMessage(pcloud.errorMessage());
 //			String primeCalcCloudTest = pcloud.returnNumber();
-			this.data.setTotalTimeCloudResult(Float.toString(pcloud.returnTime()));
+			this.data.setTotalTimeCloudResult(Float.toString(pcloud.getTotalResponseTime()));
 		}
 	}
 	

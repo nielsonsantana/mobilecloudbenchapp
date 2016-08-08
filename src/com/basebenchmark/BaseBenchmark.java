@@ -8,144 +8,110 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 
+import org.apache.http.HttpResponse;
+
+import android.util.Log;
+
 import com.ntp.SntpClient;
 import com.timer.Timer;
+import com.timer.Timer2;
+import com.utils.Utils;
 
 public class BaseBenchmark {
-	private long totalTime = 0;
-	private long requestTime = 0;
-	private long responseTime = 0;
-	private long computeTimeServer = 0;
+	
+	private long totalResponseTime = 0;
+	private float requestNetworkTime = 0;
+	private float responseNetworkTime = 0;
+	private long totalNetworkTime = 0;
+	private long computeTimeOnServer = 0;
 	SntpClient sntpclient = null;
 	
-	private String errorMessage;
-	private String returnValue = "dude";
+	private String errorMessage = "";
+	private String resultValue = "";
 	
 	public void setSntpClient(SntpClient client){
 		this.sntpclient = client;
 	}
 	
-	public void startBenchmark(HashMap<String, String> paramets) {
-		new Timer();
-		Timer.reset();
-		Timer.start();
-		HashMap<String, String> result;
+	public void startBenchmarkLocal(HashMap<String, String> paramets) {
+		Timer2 timer = new Timer2();
+		timer.start();
 		
-		result = runBenchmark(paramets);
+		this.resultValue = runBenchmark(paramets);
 		
-//			URL url = new URL(inUrl);
-//			BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
-//			String str;
-//			while((str = in.readLine()) != null) {
-//				this.returnValue = str;
-//				String [] csv = str.split(",");
-//				if(csv.length > 2){
-//					this.returnValue = String.valueOf(csv[0]); // Calc 
-//					this.requestTime = Long.parseLong(csv[1]);
-//					this.computeTimeServer = Long.parseLong(csv[2]);
-//					long currentServerTime = Long.parseLong(csv[3]);
-//					this.responseTime = System.currentTimeMillis() - currentServerTime;
-//				}
-//			}
-//			in.close();
-		Timer.stop();
-		this.totalTime = Timer.result();
-		this.requestTime = (this.totalTime - this.computeTimeServer)/2;
-		this.responseTime = this.requestTime;
+		timer.stop();
+		
+		this.totalResponseTime = timer.result();
+		this.totalNetworkTime = (this.totalResponseTime - this.computeTimeOnServer);
+		
+		this.requestNetworkTime = Utils.round2Float((this.totalResponseTime - this.computeTimeOnServer)/2.0);
+		this.responseNetworkTime = this.requestNetworkTime;
 	}
 	
-	
-	public HashMap<String, String> runBenchmark(HashMap<String, String> paramets){
+	public void startBenchmarkCloud(HashMap<String, String> paramets) {		
+		Timer2 timer = new Timer2();
 		
-		return new HashMap<String, String>();
+		HttpResponse response = runBenchmark(paramets, timer);
+				
+		this.computeTimeOnServer = Long.parseLong(response.getFirstHeader("compute-time-server").getValue());
+		
+		this.totalResponseTime = timer.result();
+		this.totalNetworkTime = (this.totalResponseTime - this.computeTimeOnServer);
+		
+		this.requestNetworkTime = (this.totalResponseTime - this.computeTimeOnServer)/2;
+		this.responseNetworkTime = this.requestNetworkTime;
 	}
 	
-	
-//	public void primeInteract(String inUrl) {
-//		try {
-//			new Timer();
-//			Timer.reset();
-//			Timer.start();
-//			URL url = new URL(inUrl);
-//			BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
-//			String str;
-//			while((str = in.readLine()) != null) {
-//				this.returnValue = str;
-//				String [] csv = str.split(",");
-//				if(csv.length > 2){
-//					this.returnValue = String.valueOf(csv[0]); // Calc 
-//					this.requestTime = Long.parseLong(csv[1]);
-//					this.computeTimeServer = Long.parseLong(csv[2]);
-//					long currentServerTime = Long.parseLong(csv[3]);
-//					this.responseTime = System.currentTimeMillis() - currentServerTime;
-//				}
-//			}
-//			in.close();
-//			Timer.stop();
-//			this.totalTime = Timer.result();
-//			this.requestTime = (this.totalTime - this.computeTimeServer)/2;
-//			this.responseTime = this.requestTime;
-//		} catch (MalformedURLException e) {
-//			this.errorMessage = "PrimeInteract.primeInteract()" + e;
-//		} catch (IOException e) {
-//			this.errorMessage = "PrimeInteract.primeInteract()" + e;
-//		}
-//	}
-	
-//	public void syncTimeServer(String inUrl) {
-//		try {
-//			new Timer();
-//			Timer.reset();
-//			Timer.start();
-//			URL url = new URL(inUrl);
-//			BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
-//			String str;
-//			while((str = in.readLine()) != null) {
-//				this.returnValue = str;
-//				String [] csv = str.split(",");
-//				if(csv.length > 2){
-//					this.returnValue = String.valueOf(csv[0]);
-//					this.requestTime = Long.parseLong(csv[1]);
-//					this.computeTimeServer = Long.parseLong(csv[2]);
-//					long currentServerTime = Long.parseLong(csv[3]);
-//					this.responseTime = sntpclient.getNtpTime() - currentServerTime;
-//				}
-//			}
-//			in.close();
-//			Timer.stop();
-//			this.totalTime = Timer.result();
-//			//this.requestTime = (this.totalTime - this.computeTimeServer)/2;
-//			//this.responseTime = this.requestTime;
-//		} catch (MalformedURLException e) {
-//			this.errorMessage = "PrimeInteract.primeInteract()" + e;
-//		} catch (IOException e) {
-//			this.errorMessage = "PrimeInteract.primeInteract()" + e;
-//		}
-//	}
-	
-	public long getRequestTime() {
-		return requestTime;
+	public long getComputeTimeOnServer() {
+		return computeTimeOnServer;
 	}
 
-	public long getResponseTime() {
-		return responseTime;
+	public void setComputeTimeOnServer(long computeTimeOnServer) {
+		this.computeTimeOnServer = computeTimeOnServer;
+	}
+	
+	public String runBenchmark(HashMap<String, String> paramets){
+		throw new UnsupportedOperationException("Method not implemented yet.");
+	}
+	
+	public HttpResponse runBenchmark(HashMap<String, String> paramets, Timer2 timer){
+		throw new UnsupportedOperationException("Method not implemented yet.");
 	}
 
-	public long getComputeTimeServer() {
-		return computeTimeServer;
+	public float getTotalResponseTime() {
+		return totalResponseTime;
 	}
-	
 
-	public String errorMessage() {
-		return this.errorMessage;
+	public long getTotalNetworkTime() {
+		return totalNetworkTime;
+	}
+
+	public void setTotalResponseTime(long totalResponseTime) {
+		this.totalResponseTime = totalResponseTime;
+	}
+
+	public String getResultValue() {
+		return resultValue;
+	}
+
+	public void setResultValue(String resultValue) {
+		this.resultValue = resultValue;
+	}
+
+	public float getRequestNetworkTime() {
+		return requestNetworkTime;
+	}
+
+	public float getResponseNetworkTime() {
+		return responseNetworkTime;
 	}
 	
-    public String returnNumber() {
-		return this.returnValue;
-    }
-	
-	public long returnTime() {
-		return this.totalTime;
+	public String getErrorMessage() {
+		return errorMessage;
+	}
+
+	public void setErrorMessage(String errorMessage) {
+		this.errorMessage = errorMessage;
 	}
 	
 	
